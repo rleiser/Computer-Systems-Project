@@ -42,7 +42,9 @@ int main(void)
       }
     }
     
-    pclose(cmd);
-    fclose(fp);
+    if (pclose(cmd) == -1)
+      exit(EXIT_FAILURE);
+    if (fclose(fp) == EOF)
+      exit(EXIT_FAILURE);
     return 0;
 }
