@@ -2,49 +2,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-_Bool prefix(const char *pat, const char *str)
-{
-  /* checks if a string is a prefix of another string */
-  return strncmp(pat, str, strlen(pat)) == 0;
-}
-
 int main(void)
 {
-    FILE *cmd;
+    FILE *zcat_cmd;
+    FILE *grep_cmd;
     char result[1024];
-    char pat[] = "LEISER ";
-    FILE *fp;
-    
+     
     /* simulates zcat command: use popen() to open the file and read from it */
-    cmd = popen("zcat NYSprop.gz", "r");
+    zcat_cmd = popen("zcat NYSprop.gz", "r");
     /* error if it fails to open */
-    if (cmd == NULL) {
+    if (zcat_cmd == NULL) {
       perror("Error with popen");
       exit(EXIT_FAILURE);
     }
 
-    /* open a new file that the results of the simulated pipeline will be added to */
-    fp = fopen("cResult.txt", "w");
-    /* error if it fails to open */
-    if (fp == NULL){
-      perror("Error opening cResult file");
+    /* simulates grep command: use popen() to extract only lines with the last name LEISER */
+    /* prints results to a file called cResult.txt */
+    grep_cmd = popen("grep '^LEISER ' >cResult.txt", "w");
+    if (grep_cmd == NULL){
+      perror("Error with popen");
       exit(EXIT_FAILURE);
+    }
+
+    while (fgets(result, sizeof(result), zcat_cmd) != NULL){
+      fprintf(grep_cmd, "%s", result);
     }
     
 
-    /* reads a line at a time from a stream */
-    while (fgets(result, sizeof(result), cmd)) {
-      /* simulates grep command: if the pattern matches the line, print the line */ 
-      if (prefix(pat, result) == 1){
-	if (fprintf(fp, "%s", result) < 0){
-	  exit(EXIT_FAILURE);
-	}
-      }
-    }
+    if (pclose(zcat_cmd) == -1 || pclose(grep_cmd) == -1)
+      exit(EXIT_FAILURE);
     
-    if (pclose(cmd) == -1)
-      exit(EXIT_FAILURE);
-    if (fclose(fp) == EOF)
-      exit(EXIT_FAILURE);
     return 0;
 }
